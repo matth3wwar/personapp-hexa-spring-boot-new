@@ -1,7 +1,7 @@
 package co.edu.javeriana.as.personapp.controller;
 
-import java.util.List;
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 import org.springframework.dao.DataIntegrityViolationException;
@@ -16,9 +16,16 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.server.ResponseStatusException;
 
-import co.edu.javeriana.as.personapp.adapter.TablasRelacionalesMaria;
+import co.edu.javeriana.as.personapp.application.port.in.RelationalTablesInputPort;
+import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
+import co.edu.javeriana.as.personapp.common.exceptions.ResourceConflictException;
+import co.edu.javeriana.as.personapp.common.exceptions.RelationshipConflictException;
+import co.edu.javeriana.as.personapp.domain.Person;
+import co.edu.javeriana.as.personapp.domain.Phone;
+import co.edu.javeriana.as.personapp.domain.Profession;
+import co.edu.javeriana.as.personapp.domain.Study;
+import co.edu.javeriana.as.personapp.mapper.RelationalTablesRestMapper;
 import co.edu.javeriana.as.personapp.model.request.EstudiosTablaRequest;
 import co.edu.javeriana.as.personapp.model.request.PersonaTablaRequest;
 import co.edu.javeriana.as.personapp.model.request.ProfesionTablaRequest;
@@ -28,150 +35,167 @@ import co.edu.javeriana.as.personapp.model.request.TelefonoTablaRequest;
 @RequestMapping("/api/v1/tablas")
 public class TablasRelacionalesController {
 
-	private final TablasRelacionalesMaria tablas;
+	private final RelationalTablesInputPort tables;
+	private final RelationalTablesRestMapper mapper;
 
-	public TablasRelacionalesController(TablasRelacionalesMaria tablas) {
-		this.tablas = tablas;
+	public TablasRelacionalesController(RelationalTablesInputPort tables, RelationalTablesRestMapper mapper) {
+		this.tables = tables;
+		this.mapper = mapper;
 	}
 
 	@PostMapping("/persona")
-	public ResponseEntity<PersonaTablaRequest> crearPersona(@RequestBody PersonaTablaRequest request) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(tablas.crearPersona(request));
+	public ResponseEntity<PersonaTablaRequest> crearPersona(@RequestBody PersonaTablaRequest request)
+			throws ResourceConflictException {
+		return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toRequest(tables.createPerson(mapper.toDomain(request))));
 	}
 
 	@GetMapping("/persona")
 	public List<PersonaTablaRequest> listarPersonas() {
-		return tablas.listarPersonas();
+		return mapper.toPersonRequests(tables.findAllPeople());
 	}
 
 	@GetMapping("/persona/count")
 	public long contarPersonas() {
-		return tablas.contarPersonas();
+		return tables.countPeople();
 	}
 
 	@GetMapping("/persona/{cc}")
-	public PersonaTablaRequest buscarPersona(@PathVariable Integer cc) {
-		return tablas.buscarPersona(cc);
+	public PersonaTablaRequest buscarPersona(@PathVariable Integer cc) throws NoExistException {
+		return mapper.toRequest(tables.findPerson(cc));
 	}
 
 	@PutMapping("/persona/{cc}")
 	public PersonaTablaRequest actualizarPersona(@PathVariable Integer cc,
-			@RequestBody PersonaTablaRequest request) {
-		return tablas.actualizarPersona(cc, request);
+			@RequestBody PersonaTablaRequest request) throws NoExistException {
+		return mapper.toRequest(tables.updatePerson(cc, mapper.toDomain(request)));
 	}
 
 	@DeleteMapping("/persona/{cc}")
-	public ResponseEntity<Void> eliminarPersona(@PathVariable Integer cc) {
-		tablas.eliminarPersona(cc);
+	public ResponseEntity<Void> eliminarPersona(@PathVariable Integer cc)
+			throws NoExistException, RelationshipConflictException {
+		tables.deletePerson(cc);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/profesion")
-	public ResponseEntity<ProfesionTablaRequest> crearProfesion(@RequestBody ProfesionTablaRequest request) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(tablas.crearProfesion(request));
+	public ResponseEntity<ProfesionTablaRequest> crearProfesion(@RequestBody ProfesionTablaRequest request)
+			throws ResourceConflictException {
+		return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toRequest(tables.createProfession(mapper.toDomain(request))));
 	}
 
 	@GetMapping("/profesion")
 	public List<ProfesionTablaRequest> listarProfesiones() {
-		return tablas.listarProfesiones();
+		return mapper.toProfessionRequests(tables.findAllProfessions());
 	}
 
 	@GetMapping("/profesion/count")
 	public long contarProfesiones() {
-		return tablas.contarProfesiones();
+		return tables.countProfessions();
 	}
 
 	@GetMapping("/profesion/{id}")
-	public ProfesionTablaRequest buscarProfesion(@PathVariable Integer id) {
-		return tablas.buscarProfesion(id);
+	public ProfesionTablaRequest buscarProfesion(@PathVariable Integer id) throws NoExistException {
+		return mapper.toRequest(tables.findProfession(id));
 	}
 
 	@PutMapping("/profesion/{id}")
 	public ProfesionTablaRequest actualizarProfesion(@PathVariable Integer id,
-			@RequestBody ProfesionTablaRequest request) {
-		return tablas.actualizarProfesion(id, request);
+			@RequestBody ProfesionTablaRequest request) throws NoExistException {
+		return mapper.toRequest(tables.updateProfession(id, mapper.toDomain(request)));
 	}
 
 	@DeleteMapping("/profesion/{id}")
-	public ResponseEntity<Void> eliminarProfesion(@PathVariable Integer id) {
-		tablas.eliminarProfesion(id);
+	public ResponseEntity<Void> eliminarProfesion(@PathVariable Integer id)
+			throws NoExistException, RelationshipConflictException {
+		tables.deleteProfession(id);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/estudios")
-	public ResponseEntity<EstudiosTablaRequest> crearEstudio(@RequestBody EstudiosTablaRequest request) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(tablas.crearEstudio(request));
+	public ResponseEntity<EstudiosTablaRequest> crearEstudio(@RequestBody EstudiosTablaRequest request)
+			throws NoExistException, ResourceConflictException {
+		return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toRequest(tables.createStudy(mapper.toDomain(request))));
 	}
 
 	@GetMapping("/estudios")
 	public List<EstudiosTablaRequest> listarEstudios() {
-		return tablas.listarEstudios();
+		return mapper.toStudyRequests(tables.findAllStudies());
 	}
 
 	@GetMapping("/estudios/count")
 	public long contarEstudios() {
-		return tablas.contarEstudios();
+		return tables.countStudies();
 	}
 
 	@GetMapping("/estudios/{id_prof}/{cc_per}")
-	public EstudiosTablaRequest buscarEstudio(@PathVariable Integer id_prof, @PathVariable Integer cc_per) {
-		return tablas.buscarEstudio(id_prof, cc_per);
+	public EstudiosTablaRequest buscarEstudio(@PathVariable Integer id_prof, @PathVariable Integer cc_per)
+			throws NoExistException {
+		return mapper.toRequest(tables.findStudy(id_prof, cc_per));
 	}
 
 	@PutMapping("/estudios/{id_prof}/{cc_per}")
 	public EstudiosTablaRequest actualizarEstudio(@PathVariable Integer id_prof, @PathVariable Integer cc_per,
-			@RequestBody EstudiosTablaRequest request) {
-		return tablas.actualizarEstudio(id_prof, cc_per, request);
+			@RequestBody EstudiosTablaRequest request) throws NoExistException {
+		return mapper.toRequest(tables.updateStudy(id_prof, cc_per, mapper.toDomain(request)));
 	}
 
 	@DeleteMapping("/estudios/{id_prof}/{cc_per}")
-	public ResponseEntity<Void> eliminarEstudio(@PathVariable Integer id_prof, @PathVariable Integer cc_per) {
-		tablas.eliminarEstudio(id_prof, cc_per);
+	public ResponseEntity<Void> eliminarEstudio(@PathVariable Integer id_prof, @PathVariable Integer cc_per)
+			throws NoExistException {
+		tables.deleteStudy(id_prof, cc_per);
 		return ResponseEntity.noContent().build();
 	}
 
 	@PostMapping("/telefono")
-	public ResponseEntity<TelefonoTablaRequest> crearTelefono(@RequestBody TelefonoTablaRequest request) {
-		return ResponseEntity.status(HttpStatus.CREATED).body(tablas.crearTelefono(request));
+	public ResponseEntity<TelefonoTablaRequest> crearTelefono(@RequestBody TelefonoTablaRequest request)
+			throws NoExistException, ResourceConflictException {
+		return ResponseEntity.status(HttpStatus.CREATED).body(mapper.toRequest(tables.createPhone(mapper.toDomain(request))));
 	}
 
 	@GetMapping("/telefono")
 	public List<TelefonoTablaRequest> listarTelefonos() {
-		return tablas.listarTelefonos();
+		return mapper.toPhoneRequests(tables.findAllPhones());
 	}
 
 	@GetMapping("/telefono/count")
 	public long contarTelefonos() {
-		return tablas.contarTelefonos();
+		return tables.countPhones();
 	}
 
 	@GetMapping("/telefono/{num}")
-	public TelefonoTablaRequest buscarTelefono(@PathVariable String num) {
-		return tablas.buscarTelefono(num);
+	public TelefonoTablaRequest buscarTelefono(@PathVariable String num) throws NoExistException {
+		return mapper.toRequest(tables.findPhone(num));
 	}
 
 	@PutMapping("/telefono/{num}")
 	public TelefonoTablaRequest actualizarTelefono(@PathVariable String num,
-			@RequestBody TelefonoTablaRequest request) {
-		return tablas.actualizarTelefono(num, request);
+			@RequestBody TelefonoTablaRequest request) throws NoExistException {
+		return mapper.toRequest(tables.updatePhone(num, mapper.toDomain(request)));
 	}
 
 	@DeleteMapping("/telefono/{num}")
-	public ResponseEntity<Void> eliminarTelefono(@PathVariable String num) {
-		tablas.eliminarTelefono(num);
+	public ResponseEntity<Void> eliminarTelefono(@PathVariable String num) throws NoExistException {
+		tables.deletePhone(num);
 		return ResponseEntity.noContent().build();
 	}
 
-	@ExceptionHandler(DataIntegrityViolationException.class)
-	public ResponseEntity<Map<String, String>> manejarIntegridadReferencial(
-			DataIntegrityViolationException exception) {
-		return ResponseEntity.status(HttpStatus.CONFLICT)
-				.body(Collections.singletonMap("error", "The operation violates a table relationship"));
+	@ExceptionHandler(NoExistException.class)
+	public ResponseEntity<Map<String, String>> manejarNoEncontrado(NoExistException exception) {
+		return error(HttpStatus.NOT_FOUND, exception.getMessage());
 	}
 
-	@ExceptionHandler(ResponseStatusException.class)
-	public ResponseEntity<Map<String, String>> manejarErrorDeSolicitud(ResponseStatusException exception) {
-		return ResponseEntity.status(exception.getStatus())
-				.body(Collections.singletonMap("error", exception.getReason()));
+	@ExceptionHandler({ RelationshipConflictException.class, ResourceConflictException.class,
+			DataIntegrityViolationException.class })
+	public ResponseEntity<Map<String, String>> manejarConflicto(Exception exception) {
+		return error(HttpStatus.CONFLICT, exception.getMessage());
+	}
+
+	@ExceptionHandler(IllegalArgumentException.class)
+	public ResponseEntity<Map<String, String>> manejarSolicitudInvalida(IllegalArgumentException exception) {
+		return error(HttpStatus.BAD_REQUEST, exception.getMessage());
+	}
+
+	private ResponseEntity<Map<String, String>> error(HttpStatus status, String message) {
+		return ResponseEntity.status(status).body(Collections.singletonMap("error", message));
 	}
 }

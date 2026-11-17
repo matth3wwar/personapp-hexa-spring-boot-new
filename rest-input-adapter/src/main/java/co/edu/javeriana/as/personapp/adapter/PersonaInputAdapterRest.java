@@ -9,8 +9,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
-import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
-import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
 import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
 import co.edu.javeriana.as.personapp.domain.Person;
@@ -24,12 +22,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PersonaInputAdapterRest {
 
 	@Autowired
-	@Qualifier("personOutputAdapterMaria")
-	private PersonOutputPort personOutputPortMaria;
+	@Qualifier("personInputPortMaria")
+	private PersonInputPort personInputPortMaria;
 
 	@Autowired
-	@Qualifier("personOutputAdapterMongo")
-	private PersonOutputPort personOutputPortMongo;
+	@Qualifier("personInputPortMongo")
+	private PersonInputPort personInputPortMongo;
 
 	@Autowired
 	private PersonaMapperRest personaMapperRest;
@@ -101,8 +99,7 @@ public class PersonaInputAdapterRest {
 	}
 
 	private PersonInputPort inputPort(String database) {
-		PersonOutputPort outputPort = "MARIA".equals(database) ? personOutputPortMaria : personOutputPortMongo;
-		return new PersonUseCase(outputPort);
+		return "MARIA".equals(database) ? personInputPortMaria : personInputPortMongo;
 	}
 
 	private String databaseName(String database) {

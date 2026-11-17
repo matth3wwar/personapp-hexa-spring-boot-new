@@ -7,8 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
-import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
-import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
 import co.edu.javeriana.as.personapp.common.setup.DatabaseOption;
@@ -21,12 +19,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PersonaInputAdapterCli {
 
 	@Autowired
-	@Qualifier("personOutputAdapterMaria")
-	private PersonOutputPort personOutputPortMaria;
+	@Qualifier("personInputPortMaria")
+	private PersonInputPort personInputPortMaria;
 
 	@Autowired
-	@Qualifier("personOutputAdapterMongo")
-	private PersonOutputPort personOutputPortMongo;
+	@Qualifier("personInputPortMongo")
+	private PersonInputPort personInputPortMongo;
 
 	@Autowired
 	private PersonaMapperCli personaMapperCli;
@@ -35,9 +33,9 @@ public class PersonaInputAdapterCli {
 
 	public void setPersonOutputPortInjection(String dbOption) throws InvalidOptionException {
 		if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
-			personInputPort = new PersonUseCase(personOutputPortMaria);
+			personInputPort = personInputPortMaria;
 		} else if (dbOption.equalsIgnoreCase(DatabaseOption.MONGO.toString())) {
-			personInputPort = new PersonUseCase(personOutputPortMongo);
+			personInputPort = personInputPortMongo;
 		} else {
 			throw new InvalidOptionException("Invalid database option: " + dbOption);
 		}

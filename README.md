@@ -48,7 +48,10 @@ Ejemplo de creación:
 ## CRUD del esquema relacional MariaDB
 
 Las operaciones para las tablas `persona`, `profesion`, `estudios` y `telefono`
-se exponen bajo `/api/v1/tablas`. Cada recurso permite crear (`POST`), listar
+se exponen bajo `/api/v1/tablas`. El controlador REST invoca un puerto de entrada
+en `application`; el caso de uso depende de un puerto de salida basado en el
+dominio y el adaptador MariaDB implementa la persistencia JPA. Los DTO REST y las
+entidades JPA permanecen en sus respectivos adaptadores. Cada recurso permite crear (`POST`), listar
 (`GET`), buscar por clave (`GET`), actualizar (`PUT`), eliminar (`DELETE`) y
 contar (`GET /count`). Estas rutas usan únicamente las columnas del esquema:
 
