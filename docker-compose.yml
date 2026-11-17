@@ -1,0 +1,71 @@
+services:
+  mariadb:
+    image: mariadb:10.11
+    environment:
+      MARIADB_ROOT_PASSWORD: ${MARIADB_ROOT_PASSWORD}
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+      - ./scripts/persona_ddl_maria.sql:/docker-entrypoint-initdb.d/01_ddl.sql:ro
+      - ./scripts/persona_dml_maria.sql:/docker-entrypoint-initdb.d/02_dml.sql:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  mongo:
+    image: mongo:6
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+      - ./docker/mongo-init:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  rest-api:
+    build:
+      context: .
+      target: rest
+    ports:
+      - "3000:3000"
+    environment: &app-env
+      SPRING_DATASOURCE_URL: jdbc:mariadb://mariadb:3306/persona_db
+      SPRING_DATASOURCE_USERNAME: ${DB_USER}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD}
+      SPRING_DATA_MONGODB_HOST: mongo
+      SPRING_DATA_MONGODB_PORT: "27017"
+      SPRING_DATA_MONGODB_USERNAME: ${DB_USER}
+      SPRING_DATA_MONGODB_PASSWORD: ${DB_PASSWORD}
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+  # docker compose run --rm cli
+  cli:
+    profiles: ["cli"]
+    build:
+      context: .
+      target: cli
+    stdin_open: true
+    tty: true
+    environment: *app-env
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mariadb_data:
+  mongo_data:

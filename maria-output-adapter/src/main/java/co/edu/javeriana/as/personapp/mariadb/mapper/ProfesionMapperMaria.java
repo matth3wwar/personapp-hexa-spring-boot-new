@@ -46,6 +46,16 @@ public class ProfesionMapperMaria {
 		return profession;
 	}
 
+	/** Sin estudios: evita la recursion Profesion -> Estudios -> Profesion. */
+	public Profession fromAdapterToDomainShallow(ProfesionEntity profesionEntity) {
+		Profession profession = new Profession();
+		profession.setIdentification(profesionEntity.getId());
+		profession.setName(profesionEntity.getNom());
+		profession.setDescription(validateDescription(profesionEntity.getDes()));
+		profession.setStudies(new ArrayList<Study>());
+		return profession;
+	}
+
 	private String validateDescription(String des) {
 		return des != null ? des : "";
 	}

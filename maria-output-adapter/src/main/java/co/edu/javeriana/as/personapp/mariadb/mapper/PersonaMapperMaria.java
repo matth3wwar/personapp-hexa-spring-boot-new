@@ -69,6 +69,19 @@ public class PersonaMapperMaria {
 		return person;
 	}
 
+	/** Sin colecciones hijas: evita la recursion Persona -> Estudios/Telefono -> Persona. */
+	public Person fromAdapterToDomainShallow(PersonaEntity personaEntity) {
+		Person person = new Person();
+		person.setIdentification(personaEntity.getCc());
+		person.setFirstName(personaEntity.getNombre());
+		person.setLastName(personaEntity.getApellido());
+		person.setGender(validateGender(personaEntity.getGenero()));
+		person.setAge(validateAge(personaEntity.getEdad()));
+		person.setStudies(new ArrayList<Study>());
+		person.setPhoneNumbers(new ArrayList<Phone>());
+		return person;
+	}
+
 	private @NonNull Gender validateGender(Character genero) {
 		return genero == 'F' ? Gender.FEMALE : genero == 'M' ? Gender.MALE : Gender.OTHER;
 	}
