@@ -1,4 +1,4 @@
-use persona_db
+use prueba_db
 
 db.persona.insertMany([
 	{

@@ -2,8 +2,11 @@ package co.edu.javeriana.as.personapp.application.usecase;
 
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
 import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
+import co.edu.javeriana.as.personapp.common.annotations.UseCase;
 import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
 import co.edu.javeriana.as.personapp.domain.Person;
 import co.edu.javeriana.as.personapp.domain.Phone;
@@ -11,12 +14,19 @@ import co.edu.javeriana.as.personapp.domain.Study;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@UseCase
 public class PersonUseCase implements PersonInputPort {
 
-	private final PersonOutputPort personPersintence;
-
-	public PersonUseCase(PersonOutputPort personPersintence) {
-		this.personPersintence = personPersintence;
+	
+	private PersonOutputPort personPersintence;
+	
+	public PersonUseCase(@Qualifier("personOutputAdapterMaria") PersonOutputPort personPersintence) {
+		this.personPersintence=personPersintence;
+	}
+	
+	@Override
+	public void setPersintence(PersonOutputPort personPersintence) {
+		this.personPersintence=personPersintence;
 	}
 
 	@Override

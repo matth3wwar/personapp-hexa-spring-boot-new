@@ -1,6 +1,5 @@
 package co.edu.javeriana.as.personapp.mariadb.mapper;
 
-import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.util.Date;
@@ -44,15 +43,15 @@ public class EstudiosMapperMaria {
 
 	public Study fromAdapterToDomain(EstudiosEntity estudiosEntity) {
 		Study study = new Study();
-		study.setPerson(personaMapperMaria.fromAdapterToDomainShallow(estudiosEntity.getPersona()));
-		study.setProfession(profesionMapperMaria.fromAdapterToDomainShallow(estudiosEntity.getProfesion()));
+		study.setPerson(personaMapperMaria.fromAdapterToDomain(estudiosEntity.getPersona()));
+		study.setProfession(profesionMapperMaria.fromAdapterToDomain(estudiosEntity.getProfesion()));
 		study.setGraduationDate(validateGraduationDate(estudiosEntity.getFecha()));
 		study.setUniversityName(validateUniversityName(estudiosEntity.getUniver()));
-		return study;
+		return null;
 	}
 
 	private LocalDate validateGraduationDate(Date fecha) {
-		return fecha != null ? Instant.ofEpochMilli(fecha.getTime()).atZone(ZoneId.systemDefault()).toLocalDate() : null;
+		return fecha != null ? fecha.toInstant().atZone(ZoneId.systemDefault()).toLocalDate() : null;
 	}
 
 	private String validateUniversityName(String univer) {

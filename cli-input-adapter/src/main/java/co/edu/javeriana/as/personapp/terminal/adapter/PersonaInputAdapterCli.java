@@ -7,10 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 
 import co.edu.javeriana.as.personapp.application.port.in.PersonInputPort;
+import co.edu.javeriana.as.personapp.application.port.out.PersonOutputPort;
+import co.edu.javeriana.as.personapp.application.usecase.PersonUseCase;
 import co.edu.javeriana.as.personapp.common.annotations.Adapter;
 import co.edu.javeriana.as.personapp.common.exceptions.InvalidOptionException;
-import co.edu.javeriana.as.personapp.common.exceptions.NoExistException;
-import co.edu.javeriana.as.personapp.common.exceptions.ResourceConflictException;
 import co.edu.javeriana.as.personapp.common.setup.DatabaseOption;
 import co.edu.javeriana.as.personapp.terminal.mapper.PersonaMapperCli;
 import co.edu.javeriana.as.personapp.terminal.model.PersonaModelCli;
@@ -21,12 +21,12 @@ import lombok.extern.slf4j.Slf4j;
 public class PersonaInputAdapterCli {
 
 	@Autowired
-	@Qualifier("personInputPortMaria")
-	private PersonInputPort personInputPortMaria;
+	@Qualifier("personOutputAdapterMaria")
+	private PersonOutputPort personOutputPortMaria;
 
 	@Autowired
-	@Qualifier("personInputPortMongo")
-	private PersonInputPort personInputPortMongo;
+	@Qualifier("personOutputAdapterMongo")
+	private PersonOutputPort personOutputPortMongo;
 
 	@Autowired
 	private PersonaMapperCli personaMapperCli;
@@ -35,46 +35,25 @@ public class PersonaInputAdapterCli {
 
 	public void setPersonOutputPortInjection(String dbOption) throws InvalidOptionException {
 		if (dbOption.equalsIgnoreCase(DatabaseOption.MARIA.toString())) {
-			personInputPort = personInputPortMaria;
+			personInputPort = new PersonUseCase(personOutputPortMaria);
 		} else if (dbOption.equalsIgnoreCase(DatabaseOption.MONGO.toString())) {
-			personInputPort = personInputPortMongo;
+			personInputPort = new PersonUseCase(personOutputPortMongo);
 		} else {
 			throw new InvalidOptionException("Invalid database option: " + dbOption);
 		}
 	}
 
-	public PersonaModelCli crear(PersonaModelCli model) throws ResourceConflictException {
-		log.info("Into crear PersonaEntity in Input Adapter");
-		try {
-			personInputPort.findOne(model.getCc());
-			throw new ResourceConflictException("Ya existe una persona con cc " + model.getCc());
-		} catch (NoExistException e) {
-			// no existe: se puede crear
-		}
-		return personaMapperCli.fromDomainToAdapterCli(personInputPort.create(personaMapperCli.fromAdapterCliToDomain(model)));
+	public void historial1() {
+		log.info("Into historial PersonaEntity in Input Adapter");
+		List<PersonaModelCli> persona = personInputPort.findAll().stream().map(personaMapperCli::fromDomainToAdapterCli)
+					.collect(Collectors.toList());
+		persona.forEach(p -> System.out.println(p.toString()));
+	}
+	public void historial() {
+	    log.info("Into historial PersonaEntity in Input Adapter");
+	    personInputPort.findAll().stream()
+	        .map(personaMapperCli::fromDomainToAdapterCli)
+	        .forEach(System.out::println);
 	}
 
-	public List<PersonaModelCli> listar() {
-		log.info("Into listar PersonaEntity in Input Adapter");
-		return personInputPort.findAll().stream().map(personaMapperCli::fromDomainToAdapterCli)
-				.collect(Collectors.toList());
-	}
-
-	public PersonaModelCli buscar(Integer cc) throws NoExistException {
-		return personaMapperCli.fromDomainToAdapterCli(personInputPort.findOne(cc));
-	}
-
-	public PersonaModelCli actualizar(Integer cc, PersonaModelCli model) throws NoExistException {
-		model.setCc(cc);
-		return personaMapperCli
-				.fromDomainToAdapterCli(personInputPort.edit(cc, personaMapperCli.fromAdapterCliToDomain(model)));
-	}
-
-	public boolean eliminar(Integer cc) throws NoExistException {
-		return Boolean.TRUE.equals(personInputPort.drop(cc));
-	}
-
-	public int contar() {
-		return personInputPort.count();
-	}
 }
